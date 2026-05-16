@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vaultkit-db
+    env_file:
+      - ./.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  funl-runtime:
+    image: ghcr.io/vaultkit-inc/funl-runtime:0.1.0-alpha
+    container_name: vaultkit-funl
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./secrets/keys/vkit_pub.pem:/secrets/keys/vkit_pub.pem:ro
+    restart: unless-stopped
+
+  control-plane:
+    image: ghcr.io/vaultkit-inc/control-plane:0.1.0-alpha
+    container_name: vaultkit-control-plane
+    env_file:
+      - ./.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - funl-runtime
+    volumes:
+      - ./secrets/keys/vkit_priv.pem:/secrets/keys/vkit_priv.pem:ro
+      - ./secrets/keys/vkit_pub.pem:/secrets/keys/vkit_pub.pem:ro
+    restart: unless-stopped
+
+  console:
+    image: ghcr.io/vaultkit-inc/console:0.1.0-alpha
+    container_name: vaultkit-console
+    env_file:
+      - ./.env
+    ports:
+      - "5173:80"
+    depends_on:
+      - control-plane
+    restart: unless-stopped
+
+volumes:
+  db_data:
