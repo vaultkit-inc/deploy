@@ -46,7 +46,15 @@ ensure_env_secret () {
 
   if ! grep -q "^${key}=" "$ENV_FILE" || grep -q "^${key}=change-me" "$ENV_FILE"; then
     echo "🔑 Generating ${key}"
-    echo "${key}=$(generate_secret "$length")" >> "$ENV_FILE"
+    local secret
+    secret=$(generate_secret "$length")
+    if grep -q "^${key}=" "$ENV_FILE"; then
+      # Replace existing line
+      sed -i.bak "s|^${key}=.*|${key}=${secret}|" "$ENV_FILE"
+    else
+      # Append if not present
+      echo "${key}=${secret}" >> "$ENV_FILE"
+    fi
   fi
 }
 
@@ -69,12 +77,20 @@ else
   echo "✅ Signing keys generated"
 fi
 
+# Detect machine IP
+PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}' || echo "unknown")
+
+echo
+echo "📍 Your machine's public IP: $PUBLIC_IP"
 echo
 echo "⚠️  Manual setup required before starting VaultKit:"
 echo
 echo "  Please edit .env and set:"
-echo "   - APP_HOST (public domain, e.g. https://alpha.vaultkit.io)"
-echo "   - FRONTEND_BASE_URL (usually same as APP_HOST)"
+echo "   - APP_HOST"
+echo "     Local:   http://localhost:5173"
+echo "     Remote:  http://$PUBLIC_IP:5173"
+echo "     Domain:  https://vaultkit.yourdomain.com"
+echo "   - FRONTEND_BASE_URL (same as APP_HOST)"
 echo "   - POSTGRES_PASSWORD / DATABASE_URL"
 echo "   - OIDC settings (if using SSO)"
 echo
