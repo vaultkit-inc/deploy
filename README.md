@@ -72,6 +72,31 @@ All containers should be running. Visit your domain to access the VaultKit conso
 
 ---
 
+## Upgrading
+
+To move an existing install to the release pinned in this repository:
+
+```bash
+git pull
+docker compose pull
+docker compose up -d
+```
+
+Database migrations run automatically when the control plane starts. Always run the
+`control-plane`, `funl-runtime` and `console` images from the same release.
+
+Coming from `0.1.0-alpha`? Read the upgrade notes for every release in between in the
+[deployment guide](https://docs.vaultkit.io/deployment.html). In particular:
+
+- `funl-runtime` is no longer published on port 8080. The control plane reaches it at
+  `http://funl-runtime:8080` on the Compose network; don't publish it or route it
+  through a reverse proxy.
+- Keep `FUNL_URL` set in `.env`.
+- `OIDC_ENABLED=false` now turns SSO off everywhere, including browser sign-in. If you
+  sign in with SSO, set it to `true`.
+
+---
+
 ## Deployment Models
 
 **Single-Domain (recommended for design partners)**

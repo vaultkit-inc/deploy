@@ -32,6 +32,7 @@ mkdir -p "$KEYS_DIR"
 if [ ! -f "$ENV_FILE" ]; then
   echo "📄 Creating .env from .env.example"
   cp "$ROOT_DIR/.env.example" "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
   echo
 fi
 
@@ -61,6 +62,8 @@ ensure_env_secret () {
 ensure_env_secret "SECRET_KEY_BASE" 64
 ensure_env_secret "JWT_SECRET" 32
 ensure_env_secret "VAULTKIT_ENCRYPTION_KEY" 32
+# sed -i.bak leaves a copy of .env behind, which can hold the secrets above
+rm -f "$ENV_FILE.bak"
 
 # Generate signing keys
 PRIVATE_KEY="$KEYS_DIR/vkit_priv.pem"
