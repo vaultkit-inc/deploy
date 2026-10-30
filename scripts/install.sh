@@ -77,8 +77,12 @@ installed_version () {
   version="$(env_value VAULTKIT_VERSION "$ENV_FILE")"
 
   if [ -z "$version" ]; then
-    version="$(docker inspect vaultkit-control-plane --format '{{.Config.Image}}' 2>/dev/null || true)"
-    version="${version##*:}"
+    local image
+    image="$(docker inspect vaultkit-control-plane --format '{{.Config.Image}}' 2>/dev/null || true)"
+    # A container built from source has no release version.
+    case "$image" in
+      "$REGISTRY/control-plane:"[0-9]*) version="${image##*:}" ;;
+    esac
   fi
 
   echo "$version"

@@ -139,6 +139,13 @@ RUNNING_IMAGE="ghcr.io/vaultkit-inc/control-plane:0.9.0-alpha" install
 check "an install on a withdrawn release moves to the latest" '[ "$(env_version)" = 1.0.0 ]'
 check "...and says how to apply it" 'out_has "Moving from 0.9.0-alpha to 1.0.0"'
 
+# A container with this name that isn't a release, such as a local build.
+for image in infra-control-plane ghcr.io/vaultkit-inc/control-plane:latest; do
+  fresh_clone
+  RUNNING_IMAGE="$image" install
+  check "ignores a $image container" '[ $? -eq 0 ] && [ "$(env_version)" = 1.0.0 ]'
+done
+
 # Usage errors.
 fresh_clone
 install --version
