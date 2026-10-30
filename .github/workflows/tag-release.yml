@@ -1,0 +1,30 @@
+name: Tag release
+
+# install.sh checks out v<version>, so a version only becomes installable once
+# this tags the commit that makes it the default.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .env.example
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag the default version
+        run: |
+          version="$(sed -n 's/^VAULTKIT_VERSION=//p' .env.example)"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "v$version already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$version" -m "v$version"
+          git push origin "v$version"

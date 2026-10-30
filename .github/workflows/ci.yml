@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  install:
+    name: Install script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the install tests
+        run: test/install_test.sh
+
+  release:
+    name: Pinned release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the images aren't pinned in the compose file
+        run: |
+          if grep -E 'image: ghcr\.io/vaultkit-inc/.*:[0-9]' docker-compose.yml; then
+            echo "Images must use VAULTKIT_VERSION, not a fixed version" >&2
+            exit 1
+          fi
+
+      - name: Check the default version can be installed
+        run: |
+          version="$(sed -n 's/^VAULTKIT_VERSION=//p' .env.example)"
+          if grep -q "^$version " BROKEN_VERSIONS; then
+            echo "$version is listed in BROKEN_VERSIONS" >&2
+            exit 1
+          fi
+          for image in control-plane funl-runtime console; do
+            docker manifest inspect "ghcr.io/vaultkit-inc/$image:$version" >/dev/null \
+              || { echo "$image:$version doesn't exist" >&2; exit 1; }
+          done
