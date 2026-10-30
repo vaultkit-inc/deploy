@@ -74,7 +74,15 @@ All containers should be running. Visit your domain to access the VaultKit conso
 
 ## Upgrading
 
-To move an existing install to the release pinned in this repository:
+To move an existing install to the release pinned in this repository, back up the
+database first. This reads the connection, including the database name, from
+`DATABASE_URL`, so it works whatever your database is called:
+
+```bash
+docker compose exec -T postgres sh -c 'pg_dump "$DATABASE_URL"' > vaultkit-backup.sql
+```
+
+Then:
 
 ```bash
 git pull
@@ -91,6 +99,11 @@ Coming from `0.1.0-alpha`? Read the upgrade notes for every release in between i
 - `funl-runtime` is no longer published on port 8080. The control plane reaches it at
   `http://funl-runtime:8080` on the Compose network; don't publish it or route it
   through a reverse proxy.
+- The control plane is no longer published on port 3000; the console proxies to it, so
+  point your reverse proxy at port 5173. A multi-domain setup that routes to port 3000
+  from outside Docker has to publish it again, on an address only the proxy can reach.
+- Your reverse proxy must send `X-Forwarded-Proto: https`. Caddy and most others do by
+  default. Without it, the control plane redirects forever.
 - Keep `FUNL_URL` set in `.env`.
 - `OIDC_ENABLED=false` now turns SSO off everywhere, including browser sign-in. If you
   sign in with SSO, set it to `true`.
