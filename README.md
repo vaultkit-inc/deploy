@@ -10,7 +10,7 @@ Full documentation: [docs.vaultkit.io/deployment](https://docs.vaultkit.io/deplo
 
 - `docker-compose.yml` — wires all services together
 - `.env.example` — configuration template
-- `scripts/install.sh` — generates keys and secrets
+- `scripts/install.sh` — generates keys and secrets, and selects the release
 - `secrets/` — signing keys generated at install time
 
 VaultKit runs four containers:
