@@ -70,6 +70,38 @@ docker compose ps
 
 All containers should be running. Visit your domain to access the VaultKit console.
 
+A custom domain needs a reverse proxy in front of VaultKit for HTTPS; see
+[Running behind a reverse proxy](#running-behind-a-reverse-proxy).
+
+---
+
+## Running behind a reverse proxy
+
+Forward all paths to the console on port 5173. Its nginx handles routing, so don't send
+anything to ports 3000 or 8080, which are internal.
+
+Caddy gets a Let's Encrypt certificate automatically:
+
+```
+vaultkit.example.com {
+    reverse_proxy localhost:5173
+}
+```
+
+Bind the console to localhost in `docker-compose.yml`:
+
+```yaml
+    ports:
+      - "127.0.0.1:5173:80"
+```
+
+The console trusts the incoming `X-Forwarded-Proto`, so if port 5173 is reachable from
+the internet, anyone can skip the HTTPS redirect. Close 5173 in your firewall or security
+group too. Besides SSH, only ports 80 and 443 need to be open.
+
+If Cloudflare is in front, set its SSL mode to **Full** or **Full (strict)**, not
+Flexible. Flexible sends plain HTTP to your server, which causes a redirect loop.
+
 ---
 
 ## Upgrading
@@ -113,7 +145,7 @@ Coming from `0.1.0-alpha`? Read the upgrade notes for every release in between i
 ## Deployment Models
 
 **Single-Domain (recommended for design partners)**
-One domain serves both frontend and backend. No external reverse proxy required.
+One domain serves both frontend and backend. A reverse proxy only needs to handle TLS.
 
 **Multi-Domain (advanced)**
 Separate domains for frontend and backend. For larger organizations with existing infrastructure standards.
