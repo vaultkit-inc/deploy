@@ -10,7 +10,7 @@ Full documentation: [docs.vaultkit.io/deployment](https://docs.vaultkit.io/deplo
 
 - `docker-compose.yml` — wires all services together
 - `.env.example` — configuration template
-- `scripts/install.sh` — generates keys and secrets
+- `scripts/install.sh` — generates keys and secrets, and selects the release
 - `secrets/` — signing keys generated at install time
 
 VaultKit runs four containers:
@@ -46,7 +46,15 @@ cd deploy
 ./scripts/install.sh
 ```
 
-Generates signing keys and creates your `.env` from `.env.example`.
+Generates signing keys, creates your `.env` from `.env.example`, and selects the latest
+release. To install a specific one:
+
+```bash
+./scripts/install.sh --version 0.9.2-alpha
+```
+
+The version is saved as `VAULTKIT_VERSION` in `.env`, and all three images use it. The
+installer refuses versions that don't exist or are known to be broken.
 
 ### 3. Configure your environment
 
@@ -88,11 +96,10 @@ vaultkit.example.com {
 }
 ```
 
-Bind the console to localhost in `docker-compose.yml`:
+Bind the console to localhost in `.env`:
 
-```yaml
-    ports:
-      - "127.0.0.1:5173:80"
+```bash
+CONSOLE_BIND=127.0.0.1
 ```
 
 The console trusts the incoming `X-Forwarded-Proto`, so if port 5173 is reachable from
@@ -106,9 +113,10 @@ Flexible. Flexible sends plain HTTP to your server, which causes a redirect loop
 
 ## Upgrading
 
-To move an existing install to the release pinned in this repository, back up the
-database first. This reads the connection, including the database name, from
-`DATABASE_URL`, so it works whatever your database is called:
+An install stays on its version until you change it, so pulling this repository never
+upgrades you. To upgrade, back up the database first. This reads the connection,
+including the database name, from `DATABASE_URL`, so it works whatever your database is
+called:
 
 ```bash
 docker compose exec -T postgres sh -c 'pg_dump "$DATABASE_URL"' > vaultkit-backup.sql
@@ -117,10 +125,16 @@ docker compose exec -T postgres sh -c 'pg_dump "$DATABASE_URL"' > vaultkit-backu
 Then:
 
 ```bash
-git pull
+./scripts/install.sh --version <version>
 docker compose pull
 docker compose up -d
 ```
+
+The installer switches this folder to that release, so run it instead of `git pull`, and
+keep your own settings in `.env`. It stops if tracked files have local changes.
+
+VaultKit can't downgrade in place, because migrations don't run backwards, so the
+installer refuses an older version. To go back, restore your backup.
 
 Database migrations run automatically when the control plane starts. Always run the
 `control-plane`, `funl-runtime` and `console` images from the same release.
@@ -131,6 +145,10 @@ Coming from `0.1.0-alpha`? Read the upgrade notes for every release in between i
 - `funl-runtime` is no longer published on port 8080. The control plane reaches it at
   `http://funl-runtime:8080` on the Compose network; don't publish it or route it
   through a reverse proxy.
+- Installs from before `VAULTKIT_VERSION` was in `.env`: run `./scripts/install.sh` once
+  after updating this repository. `docker compose` asks for it until you do. If you
+  edited `docker-compose.yml`, undo that first; `CONSOLE_BIND` replaces binding the
+  console to localhost by hand.
 - The control plane is no longer published on port 3000; the console proxies to it, so
   point your reverse proxy at port 5173. A multi-domain setup that routes to port 3000
   from outside Docker has to publish it again, on an address only the proxy can reach.

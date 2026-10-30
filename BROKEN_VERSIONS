@@ -1,0 +1,3 @@
+# Releases that exist but must not be installed. install.sh reads this from
+# origin/main, so adding a version here protects every install.
+# Format: <version> <reason>

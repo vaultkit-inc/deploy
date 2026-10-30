@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
 
   funl-runtime:
-    image: ghcr.io/vaultkit-inc/funl-runtime:0.9.2-alpha
+    image: ghcr.io/vaultkit-inc/funl-runtime:${VAULTKIT_VERSION:?Run ./scripts/install.sh to set it in .env}
     container_name: vaultkit-funl
     env_file:
       - ./.env
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   control-plane:
-    image: ghcr.io/vaultkit-inc/control-plane:0.9.2-alpha
+    image: ghcr.io/vaultkit-inc/control-plane:${VAULTKIT_VERSION:?Run ./scripts/install.sh to set it in .env}
     container_name: vaultkit-control-plane
     env_file:
       - ./.env
@@ -40,12 +40,12 @@ services:
     restart: unless-stopped
 
   console:
-    image: ghcr.io/vaultkit-inc/console:0.9.2-alpha
+    image: ghcr.io/vaultkit-inc/console:${VAULTKIT_VERSION:?Run ./scripts/install.sh to set it in .env}
     container_name: vaultkit-console
     env_file:
       - ./.env
     ports:
-      - "5173:80"
+      - "${CONSOLE_BIND:-0.0.0.0}:5173:80"
     depends_on:
       - control-plane
     restart: unless-stopped
